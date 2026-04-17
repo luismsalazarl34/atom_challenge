@@ -1,0 +1,108 @@
+<mat-toolbar color="primary" role="banner">
+  <span class="toolbar-title">Task Manager</span>
+  <span class="spacer"></span>
+  <span class="user-email" aria-label="Logged in as">{{ currentUser()?.email }}</span>
+  <button mat-icon-button (click)="logout()" matTooltip="Logout" aria-label="Logout">
+    <mat-icon>logout</mat-icon>
+  </button>
+</mat-toolbar>
+
+<main class="page-content">
+  <!-- Create Task Form -->
+  <mat-card class="create-card">
+    <mat-card-header>
+      <mat-card-title>New Task</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" novalidate class="create-form">
+        <mat-form-field appearance="outline" class="field-title">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title" placeholder="Task title" aria-label="Task title" />
+          @if (createForm.get('title')?.invalid && createForm.get('title')?.touched) {
+            <mat-error>Title is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field-description">
+          <mat-label>Description</mat-label>
+          <textarea
+            matInput
+            formControlName="description"
+            placeholder="Task description"
+            rows="2"
+            aria-label="Task description"
+          ></textarea>
+          @if (createForm.get('description')?.invalid && createForm.get('description')?.touched) {
+            <mat-error>Description is required</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="createForm.invalid || submitting()"
+          aria-label="Add task"
+        >
+          @if (submitting()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>add</mat-icon> Add Task
+          }
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Filters & Search -->
+  <div class="controls-row">
+    <div class="filter-chips" role="group" aria-label="Filter tasks">
+      @for (filter of [['all','All'],['pending','Pending'],['completed','Completed']]; track filter[0]) {
+        <button
+          mat-stroked-button
+          [class.active-filter]="activeFilter() === filter[0]"
+          (click)="setFilter($any(filter[0]))"
+          [attr.aria-pressed]="activeFilter() === filter[0]"
+        >
+          {{ filter[1] }}
+        </button>
+      }
+    </div>
+
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search</mat-label>
+      <input matInput (input)="onSearch($event)" placeholder="Search tasks…" aria-label="Search tasks" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-container" role="status" aria-live="polite">
+      <mat-progress-bar mode="indeterminate" />
+    </div>
+  }
+
+  <!-- Task List -->
+  @if (!loading()) {
+    @if (filteredTasks.length === 0) {
+      <p class="empty-state" role="status">No tasks found.</p>
+    } @else {
+      <ul class="task-list" aria-label="Tasks">
+        @for (task of filteredTasks; track trackById($index, task)) {
+          <li>
+            <app-task-item
+              [task]="task"
+              [editing]="editingTaskId() === task.id"
+              (toggleComplete)="onToggleComplete($event)"
+              (editStart)="onEditStart($event)"
+              (editSave)="onEditSave($event)"
+              (editCancel)="onEditCancel()"
+              (delete)="onDeleteRequest($event)"
+            />
+          </li>
+        }
+      </ul>
+    }
+  }
+</main>

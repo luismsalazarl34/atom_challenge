@@ -1,0 +1,11 @@
+.claude/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+backend/.env
+backend/dist/
+backend/coverage/
+backend/node_modules/
+frontend/dist/
+frontend/node_modules/
