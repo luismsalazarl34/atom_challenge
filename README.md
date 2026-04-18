@@ -1,64 +1,64 @@
 # Task Manager — Atom Challenge
 
-Aplicación fullstack de gestión de tareas construida con **Angular 17**, **Node.js + Express + TypeScript** y **Firebase Firestore**, desplegada con **Firebase Hosting** (frontend) y **Railway** (backend).
+A fullstack task management application built with **Angular 17**, **Node.js + Express + TypeScript**, and **Firebase Firestore**, deployed on **Firebase Hosting** (frontend) and **Vercel** (backend).
 
 ---
 
-## Tabla de contenidos
+## Table of Contents
 
-1. [Demo en vivo](#demo-en-vivo)
-2. [Tecnologías utilizadas](#tecnologías-utilizadas)
-3. [Arquitectura del proyecto](#arquitectura-del-proyecto)
-4. [Decisiones técnicas](#decisiones-técnicas)
-5. [Por qué no usamos Firebase Functions](#por-qué-no-usamos-firebase-functions)
-6. [Configuración local](#configuración-local)
-7. [Cómo desplegar](#cómo-desplegar)
-8. [Endpoints del API](#endpoints-del-api)
+1. [Live Demo](#live-demo)
+2. [Tech Stack](#tech-stack)
+3. [Project Architecture](#project-architecture)
+4. [Technical Decisions](#technical-decisions)
+5. [Why Not Firebase Functions](#why-not-firebase-functions)
+6. [Local Setup](#local-setup)
+7. [Deployment](#deployment)
+8. [API Endpoints](#api-endpoints)
 9. [Tests](#tests)
 10. [Trade-offs](#trade-offs)
-11. [Qué mejoraría con más tiempo](#qué-mejoraría-con-más-tiempo)
+11. [What I Would Improve](#what-i-would-improve)
 
 ---
 
-## Demo en vivo
+## Live Demo
 
 | | URL |
 |--|--|
 | Frontend | https://atom-challenge-fullstack.web.app |
-| Backend API | https://atom-challenge-backend.up.railway.app |
+| Backend API | https://atom-challenge-delta.vercel.app |
 
 ---
 
-## Tecnologías utilizadas
+## Tech Stack
 
 ### Frontend
 - **Angular 17** — standalone components, signals, lazy loading
-- **Angular Material** — UI components y diseño responsive
-- **RxJS** — manejo de streams asíncronos con `catchError` y `takeUntilDestroyed`
-- **SCSS** — estilos con separación por componente
+- **Angular Material** — UI components and responsive layout
+- **RxJS** — async stream handling with `catchError` and `takeUntilDestroyed`
+- **SCSS** — per-component styles
 
 ### Backend
-- **Node.js + Express** — servidor HTTP
-- **TypeScript** — tipado estricto en toda la codebase
-- **Firebase Admin SDK** — acceso a Firestore
-- **Firebase Firestore** — base de datos NoSQL
-- **jsonwebtoken** — autenticación JWT
-- **uuid** — generación de IDs
+- **Node.js + Express** — HTTP server
+- **TypeScript** — strict typing throughout the codebase
+- **@google-cloud/firestore** — direct Firestore access (no gRPC, REST-only)
+- **Firebase Firestore** — NoSQL database
+- **jsonwebtoken** — JWT authentication
+- **uuid** — ID generation
 
-### Infraestructura
-- **Firebase Hosting** — hosting del frontend (plan Spark gratuito)
-- **Railway** — hosting del backend Express (plan gratuito)
-- **Firebase Firestore** — base de datos (plan Spark gratuito)
+### Infrastructure
+- **Firebase Hosting** — frontend hosting (free Spark plan)
+- **Vercel** — backend serverless deployment (free plan)
+- **Firebase Firestore** — database (free Spark plan)
 
 ---
 
-## Arquitectura del proyecto
+## Project Architecture
 
 ```
 atom_challenge/
-  backend/          # API Express con Clean Architecture
-  frontend/         # Angular 17 con arquitectura por features
-  firebase.json     # Configuración de Firebase Hosting
+  backend/          # Express API with Clean Architecture
+  frontend/         # Angular 17 feature-based architecture
+  firebase.json     # Firebase Hosting configuration
   README.md
 ```
 
@@ -67,7 +67,7 @@ atom_challenge/
 ```
 backend/src/
   domain/
-    entities/           # User.ts, Task.ts — tipos puros sin dependencias
+    entities/           # User.ts, Task.ts — pure types with no external dependencies
     repositories/       # IUserRepository.ts, ITaskRepository.ts — interfaces
   application/
     use-cases/
@@ -85,15 +85,15 @@ backend/src/
     utils/              # validators
 ```
 
-**Flujo de una petición:**
+**Request flow:**
 ```
 HTTP Request
   → Route
-    → Auth Middleware (verifica JWT)
-      → Controller (extrae datos del request)
-        → Use Case (lógica de negocio)
-          → Repository Interface (contrato)
-            → Firestore Implementation (persistencia)
+    → Auth Middleware (verifies JWT)
+      → Controller (extracts request data)
+        → Use Case (business logic)
+          → Repository Interface (contract)
+            → Firestore Implementation (persistence)
 ```
 
 ### Frontend — Feature-based Architecture
@@ -102,8 +102,8 @@ HTTP Request
 frontend/src/app/
   core/
     services/       # ApiService, AuthService, TaskService
-    guards/         # authGuard — protege rutas privadas
-    interceptors/   # authInterceptor — agrega JWT a cada request
+    guards/         # authGuard — protects private routes
+    interceptors/   # authInterceptor — attaches JWT to every request
   shared/
     components/     # ConfirmDialogComponent
     models/         # user.model.ts, task.model.ts
@@ -111,78 +111,82 @@ frontend/src/app/
     auth/
       login/        # LoginComponent
     tasks/
-      tasks-page/   # TasksPageComponent — página principal
-      task-item/    # TaskItemComponent — card de tarea individual
+      tasks-page/   # TasksPageComponent — main page
+      task-item/    # TaskItemComponent — individual task card
 ```
 
 ---
 
-## Decisiones técnicas
+## Technical Decisions
 
-### Clean Architecture en el backend
-Se optó por Clean Architecture sobre una arquitectura MVC simple porque el desafío evalúa explícitamente la separación de capas y los principios SOLID. Las ventajas concretas:
+### Clean Architecture in the backend
+Clean Architecture was chosen over a simple MVC approach because the challenge explicitly evaluates layer separation and SOLID principles. Concrete advantages:
 
-- El **domain layer** no importa nada externo — si mañana cambiamos Firestore por PostgreSQL, solo cambia la capa de infraestructura.
-- Los **use cases** son fácilmente testeables con mocks porque dependen de interfaces, no de implementaciones.
-- Los **controllers** son tan delgados que prácticamente no necesitan tests propios.
+- The **domain layer** imports nothing external — swapping Firestore for PostgreSQL only requires changing the infrastructure layer.
+- **Use cases** are easily testable with mocks because they depend on interfaces, not implementations.
+- **Controllers** are so thin they need almost no unit tests of their own.
 
-### Dependency Injection manual
-Se eligió DI manual (sin framework de IoC) porque para este tamaño de proyecto un contenedor de DI sería sobreingeniería. El composition root en `app.ts` es explícito, legible y fácil de seguir.
+### Manual Dependency Injection
+Manual DI (no IoC container) was chosen because an IoC framework would be over-engineering for this project size. The composition root in `app.ts` is explicit, readable, and easy to follow.
 
-### Signals en lugar de BehaviorSubject (Angular 17)
-Para el estado del usuario autenticado se usaron `signal()` en lugar del patrón tradicional `BehaviorSubject` + `asObservable()`. Los signals son la dirección oficial del framework desde Angular 16 y producen código más simple y con mejor rendimiento en change detection.
+### Signals instead of BehaviorSubject (Angular 17)
+`signal()` was used for authenticated user state instead of the traditional `BehaviorSubject + asObservable()` pattern. Signals are the official direction since Angular 16 and produce simpler code with better change detection performance.
 
 ### Standalone Components
-Angular 17 recomienda componentes standalone sobre NgModules. Reduce el boilerplate, mejora el tree-shaking y hace el lazy loading más directo con `loadComponent`.
+Angular 17 recommends standalone components over NgModules. This reduces boilerplate, improves tree-shaking, and makes lazy loading more straightforward with `loadComponent`.
 
-### Interceptor funcional
-Se usó `HttpInterceptorFn` (forma funcional, Angular 15+) en lugar de la clase `HttpInterceptor`. Es menos código y no requiere ser proveído en un módulo.
+### Functional Interceptor
+`HttpInterceptorFn` (functional form, Angular 15+) was used instead of the class-based `HttpInterceptor`. Less code and no module required.
 
 ### catchError + takeUntilDestroyed
-Todos los observables en componentes incluyen:
-- `catchError` — maneja errores dentro del pipe RxJS en lugar de solo en el callback de `subscribe`
-- `takeUntilDestroyed(destroyRef)` — cancela automáticamente subscripciones cuando el componente se destruye, evitando memory leaks
+All observables in components include:
+- `catchError` — handles errors inside the RxJS pipe rather than only in the `subscribe` callback
+- `takeUntilDestroyed(destroyRef)` — automatically cancels subscriptions when the component is destroyed, preventing memory leaks
 
-### JWT en lugar de Firebase Auth
-Se implementó JWT propio en lugar de Firebase Authentication porque el challenge pide explícitamente un sistema de autenticación basado en JWT con middleware propio. Esto demuestra comprensión del protocolo en lugar de delegar todo a un servicio externo.
-
----
-
-## Por qué no usamos Firebase Functions
-
-El plan original era desplegar el backend como **Firebase Cloud Functions**. Sin embargo, Firebase Cloud Functions **requiere el plan Blaze** (pay-as-you-go), lo cual implica vincular una tarjeta de crédito y habilitar facturación en Google Cloud.
-
-Para este challenge se optó por una solución completamente gratuita:
-
-| Componente | Plan original | Solución adoptada | Costo |
-|------------|--------------|-------------------|-------|
-| Backend | Firebase Functions (Blaze) | Railway (Express directo) | $0 |
-| Base de datos | Firebase Firestore | Firebase Firestore | $0 (plan Spark) |
-| Frontend | Firebase Hosting | Firebase Hosting | $0 (plan Spark) |
-
-**Ventajas adicionales de Railway sobre Firebase Functions:**
-- Sin cold starts en el tier gratuito
-- Logs más claros y directos
-- Deploy más simple (push a GitHub)
-- No requiere compilar a un formato específico de Functions
-
-**Lo que se pierde vs Firebase Functions:**
-- Escalado automático (Firebase Functions escala a cero)
-- Integración nativa con el ecosistema Firebase
-- Menor latencia al estar en la misma infraestructura que Firestore
-
-Esta decisión es técnicamente válida y pragmática. En producción real con presupuesto, Firebase Functions sería la opción natural para mantener todo en el mismo ecosistema.
+### JWT instead of Firebase Auth
+A custom JWT system was implemented rather than Firebase Authentication because the challenge explicitly requires a JWT-based authentication system with custom middleware. This demonstrates protocol understanding rather than delegating everything to an external service.
 
 ---
 
-## Configuración local
+## Why Not Firebase Functions
 
-### Prerrequisitos
+The original plan was to deploy the backend as **Firebase Cloud Functions**. However, Firebase Cloud Functions **requires the Blaze plan** (pay-as-you-go), which means linking a credit card and enabling Google Cloud billing.
+
+For this challenge a completely free solution was adopted:
+
+| Component | Original Plan | Adopted Solution | Cost |
+|-----------|--------------|------------------|------|
+| Backend | Firebase Functions (Blaze) | Vercel (serverless Express) | $0 |
+| Database | Firebase Firestore | Firebase Firestore | $0 (Spark plan) |
+| Frontend | Firebase Hosting | Firebase Hosting | $0 (Spark plan) |
+
+**Why `@google-cloud/firestore` instead of `firebase-admin`:**
+
+When deploying to Vercel (and Railway before that), `firebase-admin` uses gRPC under the hood, which requires native binaries that are not available in serverless environments. Switching to `@google-cloud/firestore` directly with `preferRest: true` and explicit credentials bypasses the gRPC dependency entirely, making the app work reliably on Vercel.
+
+**Advantages of Vercel over Firebase Functions:**
+- No cold start limitations on the free tier
+- Direct TypeScript compilation — no special Functions format required
+- Simple deployment via `vercel.json` rewrites
+- Clear, real-time logs
+
+**Trade-offs vs Firebase Functions:**
+- No auto-scaling to zero (Functions scale automatically)
+- Outside the native Firebase ecosystem
+- Slightly higher latency to Firestore vs same-infrastructure deployment
+
+This is a technically sound and pragmatic decision. In a real production environment with a budget, Firebase Functions would be the natural choice to keep everything within the same ecosystem.
+
+---
+
+## Local Setup
+
+### Prerequisites
 - Node.js >= 18
-- Java (para el emulador de Firestore): `brew install openjdk`
+- Java (for the Firestore emulator): `brew install openjdk`
 - Firebase CLI: `sudo npm install -g firebase-tools`
 
-### 1. Clonar e instalar dependencias
+### 1. Clone and install dependencies
 
 ```bash
 git clone <repo-url>
@@ -192,22 +196,22 @@ cd backend && npm install && cd ..
 cd frontend && npm install && cd ..
 ```
 
-### 2. Configurar variables de entorno del backend
+### 2. Configure backend environment variables
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Edita `backend/.env`:
+Edit `backend/.env`:
 ```
 PORT=3000
-JWT_SECRET=cualquier-string-secreto-largo
+JWT_SECRET=any-long-secret-string
 FIRESTORE_EMULATOR_HOST=localhost:8080
 FIREBASE_PROJECT_ID=atom-challenge-fullstack
 ```
 
-### 3. Correr la app completa (3 terminales)
+### 3. Run the full app (3 terminals)
 
 **Terminal 1 — Firestore emulator:**
 ```bash
@@ -224,43 +228,42 @@ cd backend && npm run dev
 cd frontend && npm start
 ```
 
-Abre `http://localhost:4200`
+Open `http://localhost:4200`
 
-El **Emulator UI** (para ver datos en Firestore) está en `http://localhost:4001`
+The **Emulator UI** (to inspect Firestore data) is at `http://localhost:4001`
 
 ---
 
-## Cómo desplegar
+## Deployment
 
-### Backend → Railway
+### Backend → Vercel
 
-1. Crea cuenta en [railway.app](https://railway.app)
-2. Conecta tu repositorio de GitHub
-3. Selecciona la carpeta `backend` como root directory
-4. Configura las variables de entorno en Railway:
+1. Create an account at [vercel.com](https://vercel.com)
+2. Connect your GitHub repository
+3. Set the root directory to `backend`
+4. Configure environment variables in Vercel:
 
 ```
-JWT_SECRET=tu-secret-de-produccion
-FIREBASE_PROJECT_ID=atom-challenge-fullstack
+JWT_SECRET=your-production-secret
 FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"atom-challenge-fullstack",...}
 NODE_ENV=production
 ```
 
-> Para obtener `FIREBASE_SERVICE_ACCOUNT`: Firebase Console → Project Settings → Service Accounts → Generate new private key. Copia el contenido del JSON como una sola línea.
+> To get `FIREBASE_SERVICE_ACCOUNT`: Firebase Console → Project Settings → Service Accounts → Generate new private key. Paste the full JSON as a single line.
 
-5. Railway detecta automáticamente el `Procfile` y corre `npm start`
+5. Vercel automatically compiles `api/index.ts` and applies the rewrites from `vercel.json`
 
 ### Frontend → Firebase Hosting
 
-1. Actualiza `frontend/src/environments/environment.prod.ts` con la URL de Railway:
+1. Update `frontend/src/environments/environment.prod.ts` with your Vercel URL:
 ```ts
 export const environment = {
   production: true,
-  apiUrl: 'https://tu-app.up.railway.app',
+  apiUrl: 'https://your-app.vercel.app',
 };
 ```
 
-2. Build y deploy:
+2. Build and deploy:
 ```bash
 cd frontend && npm run build && cd ..
 firebase deploy --only hosting
@@ -268,34 +271,34 @@ firebase deploy --only hosting
 
 ---
 
-## Endpoints del API
+## API Endpoints
 
-### Usuarios
+### Users
 
-| Método | Endpoint | Descripción | Auth |
+| Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | `/users?email=` | Busca usuario por email. Retorna `{user, token}` o 404 | No |
-| POST | `/users` | Crea usuario. Body: `{email}`. Retorna `{user, token}` | No |
+| GET | `/users?email=` | Find user by email. Returns `{user, token}` or 404 | No |
+| POST | `/users` | Create user. Body: `{email}`. Returns `{user, token}` | No |
 
-### Tareas
+### Tasks
 
-| Método | Endpoint | Descripción | Auth |
+| Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | `/tasks` | Lista tareas del usuario autenticado, orden DESC por fecha | JWT |
-| POST | `/tasks` | Crea tarea. Body: `{title, description}` | JWT |
-| PUT | `/tasks/:id` | Actualiza tarea. Body: `{title?, description?, completed?}` | JWT |
-| DELETE | `/tasks/:id` | Elimina tarea | JWT |
+| GET | `/tasks` | List tasks for the authenticated user, ordered DESC by date | JWT |
+| POST | `/tasks` | Create task. Body: `{title, description}` | JWT |
+| PUT | `/tasks/:id` | Update task. Body: `{title?, description?, completed?}` | JWT |
+| DELETE | `/tasks/:id` | Delete task | JWT |
 
-**Respuestas de error:**
+**Error responses:**
 
-| Código | Significado |
-|--------|-------------|
-| 400 | Datos inválidos |
-| 401 | Token ausente o inválido |
-| 403 | Intento de modificar tarea de otro usuario |
-| 404 | Recurso no encontrado |
-| 409 | Usuario ya existe |
-| 500 | Error interno del servidor |
+| Code | Meaning |
+|------|---------|
+| 400 | Invalid input |
+| 401 | Missing or invalid token |
+| 403 | Attempt to modify another user's task |
+| 404 | Resource not found |
+| 409 | User already exists |
+| 500 | Internal server error |
 
 ---
 
@@ -309,31 +312,31 @@ cd backend && npm test
 cd frontend && npm test
 ```
 
-### Cobertura backend
-- `CreateUserUseCase` — 4 tests (happy path, duplicado, email inválido, normalización)
+### Backend coverage
+- `CreateUserUseCase` — 4 tests (happy path, duplicate, invalid email, normalization)
 - `FirestoreUserRepository` — 3 tests (not found, found, create)
 
 ---
 
 ## Trade-offs
 
-| Decisión | Ventaja | Desventaja |
-|----------|---------|------------|
-| Manual DI | Explícito, sin magia | Más código en `app.ts` al escalar |
-| Signals para estado | Moderno, menos boilerplate | Evaluadores menos familiarizados con Angular 17 |
-| JWT sin refresh token | Simple de implementar | Token de 7 días expira sin renovación automática |
-| Railway sobre Firebase Functions | Gratuito, sin cold starts | Fuera del ecosistema Firebase |
-| Firestore sin índices explícitos | Setup rápido | Puede requerir índices en producción con muchos datos |
+| Decision | Advantage | Disadvantage |
+|----------|-----------|--------------|
+| Manual DI | Explicit, no magic | More code in `app.ts` as the project scales |
+| Signals for state | Modern, less boilerplate | Reviewers less familiar with Angular 17 |
+| JWT without refresh token | Simple to implement | 7-day token expires without automatic renewal |
+| Vercel over Firebase Functions | Free, no gRPC issues | Outside the Firebase ecosystem |
+| Firestore without explicit indexes | Fast setup | May require composite indexes in production at scale |
 
 ---
 
-## Qué mejoraría con más tiempo
+## What I Would Improve
 
-1. **Refresh tokens** — tokens de acceso de corta duración + refresh token en httpOnly cookie, eliminando la exposición del JWT en localStorage.
-2. **Paginación** — cursor-based pagination en `GET /tasks` para usuarios con muchas tareas.
-3. **Optimistic updates** — actualizar el signal inmediatamente y revertir en caso de error, haciendo la UI más rápida.
-4. **E2E tests con Cypress** — cubrir los flujos críticos: login, crear tarea, toggle, eliminar.
-5. **CI/CD con GitHub Actions** — pipeline que corra lint + tests en cada PR y deploy automático a Railway/Firebase en merge a main.
-6. **Firestore indexes** — índice compuesto en `(userId, createdAt DESC)` para la query de tareas.
-7. **Error boundary global** — Angular `ErrorHandler` que reporte excepciones no capturadas a un servicio de observabilidad (ej. Sentry).
-8. **Rate limiting** — middleware `express-rate-limit` en los endpoints de autenticación para prevenir fuerza bruta.
+1. **Refresh tokens** — short-lived access tokens + refresh token in an httpOnly cookie, removing JWT exposure from localStorage.
+2. **Pagination** — cursor-based pagination on `GET /tasks` for users with many tasks.
+3. **Optimistic updates** — update the signal immediately and roll back on error for a snappier UI.
+4. **E2E tests with Cypress** — cover critical flows: login, create task, toggle, delete.
+5. **CI/CD with GitHub Actions** — pipeline that runs lint + tests on every PR and auto-deploys to Vercel/Firebase on merge to main.
+6. **Firestore indexes** — composite index on `(userId, createdAt DESC)` for the tasks query.
+7. **Global error boundary** — Angular `ErrorHandler` that reports uncaught exceptions to an observability service (e.g., Sentry).
+8. **Rate limiting** — `express-rate-limit` middleware on authentication endpoints to prevent brute-force attacks.

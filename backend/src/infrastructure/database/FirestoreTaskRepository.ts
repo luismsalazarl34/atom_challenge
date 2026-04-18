@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import * as admin from 'firebase-admin';
+import { Timestamp } from '@google-cloud/firestore';
 import { Task } from '../../domain/entities/Task';
 import { ITaskRepository } from '../../domain/repositories/ITaskRepository';
 import { getFirestore } from '../services/FirebaseService';
@@ -28,7 +28,7 @@ export class FirestoreTaskRepository implements ITaskRepository {
   async create(data: Omit<Task, 'id' | 'createdAt'>): Promise<Task> {
     const db = getFirestore();
     const id = uuidv4();
-    const createdAt = admin.firestore.Timestamp.now();
+    const createdAt = Timestamp.now();
     await db.collection(COLLECTION).doc(id).set({ ...data, createdAt });
     return { id, ...data, createdAt: createdAt.toDate() };
   }
@@ -49,9 +49,10 @@ export class FirestoreTaskRepository implements ITaskRepository {
   }
 
   private toEntity(doc: FirebaseFirestore.DocumentSnapshot): Task {
-    const data = doc.data()!;
+    const data = doc.data();
+    if (!data) throw new Error(`Task document ${doc.id} has no data`);
     const createdAt =
-      data['createdAt'] instanceof admin.firestore.Timestamp
+      data['createdAt'] instanceof Timestamp
         ? data['createdAt'].toDate()
         : new Date(data['createdAt']);
 

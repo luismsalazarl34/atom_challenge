@@ -30,7 +30,7 @@ export function createApp(jwtSecret: string): express.Application {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }));
-  app.use(express.json());
+  app.use(express.json({ limit: '10kb' }));
 
   // Services
   const jwtService = new JwtService(jwtSecret);

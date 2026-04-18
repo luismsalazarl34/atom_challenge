@@ -33,7 +33,8 @@ export class FirestoreUserRepository implements IUserRepository {
   }
 
   private toEntity(doc: FirebaseFirestore.DocumentSnapshot): User {
-    const data = doc.data()!;
+    const data = doc.data();
+    if (!data) throw new Error(`User document ${doc.id} has no data`);
     return { id: doc.id, email: data['email'] as string };
   }
 }

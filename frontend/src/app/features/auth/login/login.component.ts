@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -38,6 +39,7 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   loading = false;
 
@@ -48,10 +50,10 @@ export class LoginComponent {
   onSubmit(): void {
     if (this.form.invalid || this.loading) return;
 
-    const email = this.form.value.email!;
+    const email = this.form.value.email ?? '';
     this.loading = true;
 
-    this.auth.findUser(email).subscribe({
+    this.auth.findUser(email).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loading = false;
         this.router.navigate(['/tasks']);
@@ -83,6 +85,7 @@ export class LoginComponent {
           this.loading = true;
           return this.auth.createUser(email);
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: () => {

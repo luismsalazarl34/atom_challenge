@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -37,9 +37,8 @@ export class TaskItemComponent implements OnInit {
   @Output() editCancel = new EventEmitter<void>();
   @Output() delete = new EventEmitter<Task>();
 
+  private readonly fb = inject(FormBuilder);
   editForm!: FormGroup;
-
-  constructor(private readonly fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.editForm = this.fb.group({

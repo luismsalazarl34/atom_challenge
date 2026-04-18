@@ -111,7 +111,7 @@ export class TasksPageComponent implements OnInit {
     const { title, description } = this.createForm.value;
 
     this.taskService
-      .createTask({ title: title!, description: description! })
+      .createTask({ title: title ?? '', description: description ?? '' })
       .pipe(
         catchError(() => {
           this.showError('Failed to create task.');
