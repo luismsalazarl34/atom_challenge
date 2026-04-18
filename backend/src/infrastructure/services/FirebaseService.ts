@@ -8,20 +8,25 @@ export function getFirestore(): admin.firestore.Firestore {
       const isEmulator = !!process.env['FIRESTORE_EMULATOR_HOST'];
 
       if (isEmulator) {
-        // Local development — emulator doesn't need real credentials
         admin.initializeApp({
           projectId: process.env['FIREBASE_PROJECT_ID'] ?? 'atom-challenge-fullstack',
         });
       } else {
-        // Production — use service account from environment variable
         const serviceAccountJson = process.env['FIREBASE_SERVICE_ACCOUNT'];
         if (!serviceAccountJson) {
           throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
         }
-        const serviceAccount = JSON.parse(serviceAccountJson) as admin.ServiceAccount;
+
+        const raw = JSON.parse(serviceAccountJson);
+
+        // Railway can escape newlines in private_key — normalize them
+        if (raw['private_key']) {
+          raw['private_key'] = (raw['private_key'] as string).replace(/\\n/g, '\n');
+        }
+
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-          projectId: process.env['FIREBASE_PROJECT_ID'] ?? 'atom-challenge-fullstack',
+          credential: admin.credential.cert(raw as admin.ServiceAccount),
+          projectId: process.env['FIREBASE_PROJECT_ID'] ?? raw['project_id'],
         });
       }
     }
