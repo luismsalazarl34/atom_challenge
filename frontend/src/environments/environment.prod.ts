@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://atomchallenge-production.up.railway.app',
+  apiUrl: 'https://atom-challenge-delta.vercel.app',
 };
