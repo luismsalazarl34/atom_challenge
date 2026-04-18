@@ -21,7 +21,15 @@ import { errorMiddleware } from './interfaces/middleware/errorMiddleware';
 export function createApp(jwtSecret: string): express.Application {
   const app = express();
 
-  app.use(cors());
+  app.use(cors({
+    origin: [
+      'https://atom-challenge-fullstack.web.app',
+      'https://atom-challenge-fullstack.firebaseapp.com',
+      'http://localhost:4200',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
   app.use(express.json());
 
   // Services
