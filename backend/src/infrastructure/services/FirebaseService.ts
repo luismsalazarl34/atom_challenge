@@ -28,6 +28,9 @@ export function getFirestore(): admin.firestore.Firestore {
           credential: admin.credential.cert(raw as admin.ServiceAccount),
           projectId: process.env['FIREBASE_PROJECT_ID'] ?? raw['project_id'],
         });
+
+        // Use REST instead of gRPC — required on Railway (gRPC blocked)
+        admin.firestore().settings({ preferRest: true });
       }
     }
     initialized = true;
