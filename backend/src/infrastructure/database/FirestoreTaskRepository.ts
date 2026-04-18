@@ -12,10 +12,11 @@ export class FirestoreTaskRepository implements ITaskRepository {
     const snapshot = await db
       .collection(COLLECTION)
       .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
       .get();
 
-    return snapshot.docs.map((doc) => this.toEntity(doc));
+    return snapshot.docs
+      .map((doc) => this.toEntity(doc))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   async findById(id: string): Promise<Task | null> {
